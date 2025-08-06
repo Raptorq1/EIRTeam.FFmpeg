@@ -1,0 +1,43 @@
+name: Build EIRTeam.FFmpeg Android GDExtension
+
+on:
+  workflow_dispatch:   # Manual trigger only
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    env:
+      ANDROID_NDK_ROOT: /usr/local/android-ndk
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive   # Fetch submodules
+
+      - name: Setup Android NDK
+        uses: android-actions/setup-ndk@v2
+        with:
+          ndk-version: '25.2.9519653' # Adjust as needed
+
+      - name: Install dependencies and bootstrap tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make cmake ninja-build pkg-config git
+          make bootstrap
+
+      - name: Build Android arm64-v8a GDExtension (default)
+        run: make gdextension PLATFORM=android
+
+      - name: Build Android armeabi-v7a GDExtension
+        run: make gdextension PLATFORM=android TARGET_ARCH=arm-v7a
+
+      - name: List build output
+        run: ls -l bin/android/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: eirteam-ffmpeg-android
+          path: bin/android/*.so
